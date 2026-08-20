@@ -33,6 +33,15 @@ build/
 
 ### VS Code ###
 .vscode/
+# Logs
+logs/
+*.log
 
-### Mac OS ###
+# IDEA
+.idea/
+out/
+
+
+# OS
 .DS_Store
+Thumbs.db

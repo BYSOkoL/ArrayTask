@@ -17,15 +17,15 @@ public class ArrayValidator {
             return false;
         }
 
-        String trimmedLine = line.trim();
-        if (trimmedLine.isEmpty()) {
+        String strippedLine = line.strip();
+        if (strippedLine.isBlank()) {
             return true;
         }
 
-        String[] tokens = DELIMITER_PATTERN.split(trimmedLine);
+        String[] tokens = DELIMITER_PATTERN.split(strippedLine);
         for (String token : tokens) {
-            String cleanToken = token.trim();
-            if (cleanToken.isEmpty()) {
+            String cleanToken = token.strip();
+            if (cleanToken.isBlank()) {
                 continue;
             }
             boolean matches = NUMBER_PATTERN.matcher(cleanToken).matches();

@@ -57,11 +57,31 @@ public class ArrayProcessor {
         for (String line : lines) {
             boolean valid = validator.isValid(line);
             if (valid) {
-                processValidLine(line);
+                if (containsOnlyIntegers(line)) {
+                    processValidLine(line);
+                } else {
+                    logger.info("Skipping double values line: '{}'", line.trim());
+                }
             } else {
                 logger.warn("Skipping invalid line: '{}'", line);
             }
         }
+    }
+
+    private boolean containsOnlyIntegers(String line) {
+        String strippedLine = line.strip();
+        if (strippedLine.isBlank()) {
+            return true;
+        }
+
+        String[] tokens = strippedLine.split("[,;\\s-]+");
+        for (String token : tokens) {
+            String cleanToken = token.strip();
+            if (!cleanToken.isBlank() && cleanToken.contains(".")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void processValidLine(String line) {
@@ -94,11 +114,13 @@ public class ArrayProcessor {
 
     private void sortAndLogResults(int[] data) {
         try {
-            sortingService.sort(data, SortingAlgorithm.BUBBLE);
-            logger.info("After Bubble Sort: {}", formatArray(data));
+            int[] bubbleArray = data.clone();
+            sortingService.sort(bubbleArray, SortingAlgorithm.BUBBLE);
+            logger.info("After Bubble Sort: {}", formatArray(bubbleArray));
 
-            sortingService.sort(data, SortingAlgorithm.INSERTION);
-            logger.info("After Insertion Sort: {}", formatArray(data));
+            int[] insertionArray = data.clone();
+            sortingService.sort(insertionArray, SortingAlgorithm.INSERTION);
+            logger.info("After Insertion Sort: {}", formatArray(insertionArray));
         } catch (ArrayProcessingException e) {
             logger.error("Sorting failed: {}", e.getMessage(), e);
         }
