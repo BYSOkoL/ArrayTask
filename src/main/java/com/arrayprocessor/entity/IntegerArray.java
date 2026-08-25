@@ -2,21 +2,19 @@ package com.arrayprocessor.entity;
 
 public class IntegerArray extends NumericArray {
 
+    private final String id;
     private final int[] data;
 
-    public IntegerArray(int[] data) {
-        this.data = data.clone();  // Клон при создании
+    public IntegerArray(String id, int[] data) {
+        this.id = id;
+        this.data = data;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public int[] getData() {
-        return data.clone();  // Клон при получении
-    }
-
-    public int getLength() {
-        return data.length;
-    }
-
-    public int get(int index) {
-        return data[index];
+        return data;
     }
 }

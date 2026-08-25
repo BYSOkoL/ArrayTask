@@ -1,20 +1,22 @@
 package com.arrayprocessor;
 
+import com.arrayprocessor.dto.ArrayStatistics;
 import com.arrayprocessor.entity.IntegerArray;
 import com.arrayprocessor.exception.ArrayProcessingException;
 import com.arrayprocessor.factory.NumericArrayFactory;
 import com.arrayprocessor.parser.ArrayParser;
 import com.arrayprocessor.reader.ArrayFileReader;
+import com.arrayprocessor.repository.ArrayRepository;
 import com.arrayprocessor.service.api.ArraySortingService;
 import com.arrayprocessor.service.api.IntegerArrayStatisticsService;
 import com.arrayprocessor.service.api.SortingAlgorithm;
 import com.arrayprocessor.validator.ArrayValidator;
+import com.arrayprocessor.warehouse.ArrayWarehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
+import java.util.UUID;
 
 public class ArrayProcessor {
 
@@ -26,6 +28,8 @@ public class ArrayProcessor {
     private final NumericArrayFactory factory;
     private final IntegerArrayStatisticsService statisticsService;
     private final ArraySortingService sortingService;
+    private final ArrayRepository repository;
+    private final ArrayWarehouse warehouse;
 
     public ArrayProcessor(
             ArrayFileReader reader,
@@ -33,13 +37,17 @@ public class ArrayProcessor {
             ArrayParser parser,
             NumericArrayFactory factory,
             IntegerArrayStatisticsService statisticsService,
-            ArraySortingService sortingService) {
+            ArraySortingService sortingService,
+            ArrayRepository repository,
+            ArrayWarehouse warehouse) {
         this.reader = reader;
         this.validator = validator;
         this.parser = parser;
         this.factory = factory;
         this.statisticsService = statisticsService;
         this.sortingService = sortingService;
+        this.repository = repository;
+        this.warehouse = warehouse;
     }
 
     public void run() {
@@ -47,6 +55,7 @@ public class ArrayProcessor {
         try {
             List<String> lines = reader.readLines();
             processAllLines(lines);
+            logWarehouseStatistics();
         } catch (ArrayProcessingException e) {
             logger.error("Application terminated with error: {}", e.getMessage(), e);
         }
@@ -60,7 +69,7 @@ public class ArrayProcessor {
                 if (containsOnlyIntegers(line)) {
                     processValidLine(line);
                 } else {
-                    logger.info("Skipping double values line: '{}'", line.trim());
+                    logger.info("Skipping double values line: '{}'", line.strip());
                 }
             } else {
                 logger.warn("Skipping invalid line: '{}'", line);
@@ -86,44 +95,39 @@ public class ArrayProcessor {
 
     private void processValidLine(String line) {
         int[] parsedArray = parser.parseToIntArray(line);
-        IntegerArray array = factory.createIntegerArray(parsedArray);
-        int[] data = array.getData();
+        String id = generateId();
+        IntegerArray array = factory.createIntegerArray(id, parsedArray);
 
-        if (data.length == 0) {
-            logger.info("Empty array processed from line: '{}'", line);
-            return;
-        }
+        repository.add(array);
 
-        logArrayStatistics(data, line);
-        sortAndLogResults(data);
-    }
+        ArrayStatistics stats = statisticsService.calculateStatistics(array.getData());
+        logger.info("Array [{}] (id={}): min={}, max={}, sum={}, avg={}",
+                line.strip(),
+                id,
+                stats.min(),
+                stats.max(),
+                stats.sum(),
+                stats.avg());
 
-    private void logArrayStatistics(int[] data, String originalLine) {
-        OptionalInt min = statisticsService.findMin(data);
-        OptionalInt max = statisticsService.findMax(data);
-        OptionalInt sum = statisticsService.findSum(data);
-        OptionalDouble average = statisticsService.findAverage(data);
-
-        logger.info("Array [{}]: min={}, max={}, sum={}, avg={}",
-                originalLine.trim(),
-                min.orElse(0),
-                max.orElse(0),
-                sum.orElse(0),
-                average.orElse(0.0));
-    }
-
-    private void sortAndLogResults(int[] data) {
+        int[] bubbleArray = array.getData().clone();
         try {
-            int[] bubbleArray = data.clone();
             sortingService.sort(bubbleArray, SortingAlgorithm.BUBBLE);
             logger.info("After Bubble Sort: {}", formatArray(bubbleArray));
-
-            int[] insertionArray = data.clone();
-            sortingService.sort(insertionArray, SortingAlgorithm.INSERTION);
-            logger.info("After Insertion Sort: {}", formatArray(insertionArray));
         } catch (ArrayProcessingException e) {
             logger.error("Sorting failed: {}", e.getMessage(), e);
         }
+    }
+
+    private String generateId() {
+        return "array_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private void logWarehouseStatistics() {
+        logger.info("=== Warehouse Statistics ===");
+        logger.info("Total sum: {}", warehouse.getTotalSum());
+        logger.info("Total avg: {}", warehouse.getTotalAvg());
+        logger.info("Total max: {}", warehouse.getTotalMax());
+        logger.info("Total min: {}", warehouse.getTotalMin());
     }
 
     private String formatArray(int[] array) {

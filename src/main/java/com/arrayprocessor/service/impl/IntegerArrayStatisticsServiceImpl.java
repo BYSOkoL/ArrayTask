@@ -1,5 +1,6 @@
 package com.arrayprocessor.service.impl;
 
+import com.arrayprocessor.dto.ArrayStatistics;
 import com.arrayprocessor.service.api.IntegerArrayStatisticsService;
 
 import java.util.OptionalDouble;
@@ -8,7 +9,25 @@ import java.util.OptionalInt;
 public class IntegerArrayStatisticsServiceImpl implements IntegerArrayStatisticsService {
 
     @Override
-    public OptionalInt findMin(int[] array) {
+    public ArrayStatistics calculateStatistics(int[] array) {
+        if (array == null || array.length == 0) {
+            return new ArrayStatistics(0, 0, 0, 0.0);
+        }
+
+        OptionalInt min = findMin(array);
+        OptionalInt max = findMax(array);
+        OptionalInt sum = findSum(array);
+        OptionalDouble avg = findAverage(array);
+
+        return new ArrayStatistics(
+                min.orElse(0),
+                max.orElse(0),
+                sum.orElse(0),
+                avg.orElse(0.0)
+        );
+    }
+
+    private OptionalInt findMin(int[] array) {
         if (array == null || array.length == 0) {
             return OptionalInt.empty();
         }
@@ -21,8 +40,7 @@ public class IntegerArrayStatisticsServiceImpl implements IntegerArrayStatistics
         return OptionalInt.of(min);
     }
 
-    @Override
-    public OptionalInt findMax(int[] array) {
+    private OptionalInt findMax(int[] array) {
         if (array == null || array.length == 0) {
             return OptionalInt.empty();
         }
@@ -35,8 +53,7 @@ public class IntegerArrayStatisticsServiceImpl implements IntegerArrayStatistics
         return OptionalInt.of(max);
     }
 
-    @Override
-    public OptionalInt findSum(int[] array) {
+    private OptionalInt findSum(int[] array) {
         if (array == null || array.length == 0) {
             return OptionalInt.empty();
         }
@@ -47,8 +64,7 @@ public class IntegerArrayStatisticsServiceImpl implements IntegerArrayStatistics
         return OptionalInt.of(sum);
     }
 
-    @Override
-    public OptionalDouble findAverage(int[] array) {
+    private OptionalDouble findAverage(int[] array) {
         if (array == null || array.length == 0) {
             return OptionalDouble.empty();
         }

@@ -1,13 +1,17 @@
 package com.arrayprocessor;
 
 import com.arrayprocessor.factory.NumericArrayFactory;
+import com.arrayprocessor.observer.WarehouseObserver;
 import com.arrayprocessor.parser.ArrayParser;
 import com.arrayprocessor.reader.ArrayFileReader;
+import com.arrayprocessor.repository.ArrayRepository;
+import com.arrayprocessor.repository.ArrayRepositoryImpl;
 import com.arrayprocessor.service.api.ArraySortingService;
 import com.arrayprocessor.service.api.IntegerArrayStatisticsService;
 import com.arrayprocessor.service.impl.ArraySortingServiceImpl;
 import com.arrayprocessor.service.impl.IntegerArrayStatisticsServiceImpl;
 import com.arrayprocessor.validator.ArrayValidator;
+import com.arrayprocessor.warehouse.ArrayWarehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,8 +30,16 @@ public class Main {
         IntegerArrayStatisticsService statisticsService = new IntegerArrayStatisticsServiceImpl();
         ArraySortingService sortingService = new ArraySortingServiceImpl();
 
+        ArrayRepository repository = ArrayRepositoryImpl.getInstance();
+        ArrayWarehouse warehouse = ArrayWarehouse.getInstance();
+
+        WarehouseObserver warehouseObserver = new WarehouseObserver(warehouse);
+        repository.addObserver(warehouseObserver);
+
         ArrayProcessor processor = new ArrayProcessor(
-                reader, validator, parser, factory, statisticsService, sortingService);
+                reader, validator, parser, factory,
+                statisticsService, sortingService,
+                repository, warehouse);
 
         logger.info("Starting application execution...");
         processor.run();
